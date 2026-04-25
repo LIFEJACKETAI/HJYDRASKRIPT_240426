@@ -89,7 +89,7 @@ export function Editor() {
     }
   };
 
-    const handleAiAction = async (action: 'continue' | 'rewrite' | 'expand') => {
+      const handleAiAction = async (action: 'continue' | 'rewrite' | 'expand') => {
     if (!content.trim()) return;
     setIsAiGenerating(true);
     incrementUsage();
@@ -120,6 +120,45 @@ export function Editor() {
         setContent(data.generated_text);
       }
     } catch (err) {
+      console.error('AI action failed:', err);
+    } finally {
+      setIsAiGenerating(false);
+    }
+  };
+
+  const insertAiText = async () => {
+    if (!aiPrompt.trim()) return;
+    setIsAiGenerating(true);
+    incrementUsage();
+    try {
+      const res = await fetch('/api/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'default',
+          prompt: aiPrompt,
+          book_id: currentBook?.id,
+          context: {
+            bookTitle: currentBook?.title,
+            genre: currentBook?.genre,
+            tone: currentBook?.tone,
+            storyBible,
+            content,
+          },
+        }),
+      });
+      const data = await res.json();
+      if (!data.success) throw new Error(data.error);
+
+      setContent(content + '\n\n' + data.generated_text);
+      setAiPrompt('');
+    } catch (err) {
+      console.error('AI prompt failed:', err);
+    } finally {
+      setIsAiGenerating(false);
+    }
+  };
+
       console.error('AI action failed:', err);
     } finally {
       setIsAiGenerating(false);
