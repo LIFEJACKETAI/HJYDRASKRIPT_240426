@@ -64,6 +64,7 @@ const TIERS = [
     credits: 100,
     highlight: false,
     badge: null,
+    priceId: 'price_1TQ1X72UMFqkDoAbaucG6cg7',
     features: [
       '100 credits / month',
       'Outline & chapter structure',
@@ -82,6 +83,7 @@ const TIERS = [
     credits: 400,
     highlight: true,
     badge: 'Most Popular',
+    priceId: 'price_1TQ1YN2UMFqkDoAb5GNlGf6e',
     features: [
       '400 credits / month',
       '1 full-length book / month',
@@ -101,6 +103,7 @@ const TIERS = [
     credits: 1000,
     highlight: false,
     badge: null,
+    priceId: 'price_1TQ1cS2UMFqkDoAb3N56vDWF',
     features: [
       '1,000 credits / month',
       '2–3 full books / month',
@@ -120,6 +123,7 @@ const TIERS = [
     credits: 3000,
     highlight: false,
     badge: 'Custom Available',
+    priceId: 'price_1TQ1hI2UMFqkDoAb1VgPsDoU',
     features: [
       '3,000+ credits / month',
       'Bulk generation',
@@ -134,11 +138,13 @@ const TIERS = [
   },
 ];
 
+
 const CREDIT_PACKS = [
-  { credits: 100, price: 15, note: null },
-  { credits: 500, price: 60, note: null },
-  { credits: 1000, price: 100, note: 'Best value' },
+  { credits: 100, price: 15, note: null,         priceId: 'price_1TQ1s32UMFqkDoAbGPIUwA1z' },
+  { credits: 500, price: 60, note: null,         priceId: 'price_1TQ1tv2UMFqkDoAbNRiQvtKN' },
+  { credits: 1000, price: 100, note: 'Best value', priceId: 'price_1TQ1v72UMFqkDoAbQAatsutV' },
 ];
+
 
 export function Landing() {
   return (
@@ -432,8 +438,9 @@ export function Landing() {
                 )}
 
                 <Link
-                  to="/auth"
+                  to={tier.name === 'Studio' ? 'mailto:hello@hydraskript.com' : `/auth?priceId=${tier.priceId}`}
                   className={`w-full text-center py-3 rounded-lg font-semibold text-sm transition-opacity hover:opacity-90 ${
+
                     tier.highlight
                       ? 'bg-gradient-to-r from-purple-500 to-cyan-500 text-white'
                       : 'bg-white/10 text-white hover:bg-white/20'
@@ -453,24 +460,26 @@ export function Landing() {
             </div>
             <div className="grid md:grid-cols-3 gap-4">
               {CREDIT_PACKS.map((pack) => (
-                <div
-                  key={pack.credits}
-                  className={`relative flex items-center justify-between p-4 rounded-lg border ${
-                    pack.note ? 'border-purple-500/40 bg-purple-500/10' : 'border-white/10 bg-black/20'
-                  }`}
-                >
-                  {pack.note && (
-                    <span className="absolute -top-2.5 right-4 px-2 py-0.5 bg-purple-500 rounded text-xs font-semibold">
-                      {pack.note}
-                    </span>
-                  )}
-                  <div>
-                    <div className="font-bold text-lg">{pack.credits.toLocaleString()} credits</div>
-                    <div className="text-sm text-gray-400">${(pack.price / pack.credits * 100).toFixed(1)}¢ per credit</div>
-                  </div>
-                  <div className="text-2xl font-bold text-cyan-400">${pack.price}</div>
-                </div>
-              ))}
+  <Link
+    key={pack.credits}
+    to={`/auth?priceId=${pack.priceId}`}
+    className={`relative flex items-center justify-between p-4 rounded-lg border hover:opacity-80 transition-opacity ${
+      pack.note ? 'border-purple-500/40 bg-purple-500/10' : 'border-white/10 bg-black/20'
+    }`}
+  >
+    {pack.note && (
+      <span className="absolute -top-2.5 right-4 px-2 py-0.5 bg-purple-500 rounded text-xs font-semibold">
+        {pack.note}
+      </span>
+    )}
+    <div>
+      <div className="font-bold text-lg">{pack.credits.toLocaleString()} credits</div>
+      <div className="text-sm text-gray-400">${(pack.price / pack.credits * 100).toFixed(1)}¢ per credit</div>
+    </div>
+    <div className="text-2xl font-bold text-cyan-400">${pack.price}</div>
+  </Link>
+))}
+
             </div>
           </div>
         </div>

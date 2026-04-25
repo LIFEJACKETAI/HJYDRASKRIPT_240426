@@ -16,7 +16,22 @@ export function Auth() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
+  const [searchParams] = useSearchParams();
+  const priceId = searchParams.get('priceId');
+  useEffect(() => {
+    if (user) {
+      if (priceId) {
+        redirectToCheckout(user.id, user.email || '');
+      } else {
+        navigate('/dashboard');
+      }
+    }
+  }, [user, navigate]);
 
+  const redirectToCheckout = (userId: string, userEmail: string) => {
+    window.location.href = `/api/stripe/checkout?priceId=${priceId}&userId=${userId}&userEmail=${encodeURIComponent(userEmail)}`;
+  };
+ 
   // Redirect if already logged in
   useEffect(() => {
     if (user) {
@@ -27,8 +42,23 @@ export function Auth() {
   const handleEmailAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    setError('');
-
+           // After sign up (replace lines 43-46):
+        if (data.user) {
+          setUser(data.user);
+          if (priceId) {
+            redirectToCheckout(data.user.id, data.user.email || '');
+          } else {
+            setSuccessMessage('Account created! Check your email for verification.');
+                 // After sign in (replace lines 50-53):
+        if (data.user) {
+          setUser(data.user);
+          if (priceId) {
+            redirectToCheckout(data.user.id, data.user.email || '');
+          } else {
+            navigate('/dashboard');
+          }
+        }
+        }
     try {
       if (isSignUp) {
         const { data, error } = await supabase.auth.signUp({ 
@@ -230,7 +260,8 @@ export function Auth() {
               </div>
             </div>
 
-            <button
+            <p>Professional AI book production for serious creators.</p>
+
               type="submit"
               disabled={isLoading}
               className="w-full flex items-center justify-center space-x-2 px-4 py-3 bg-gradient-to-r from-purple-500 to-cyan-500 rounded-lg font-semibold hover:opacity-90 transition-opacity disabled:opacity-50"
