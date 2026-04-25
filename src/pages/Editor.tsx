@@ -89,37 +89,76 @@ export function Editor() {
     }
   };
 
-  const handleAiAction = async (action: 'continue' | 'rewrite' | 'expand') => {
+    const handleAiAction = async (action: 'continue' | 'rewrite' | 'expand') => {
+    if (!content.trim()) return;
     setIsAiGenerating(true);
     incrementUsage();
-    
-    // Simulate AI generation
-    setTimeout(() => {
-      let newContent = content;
+    try {
+      const res = await fetch('/api/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: action,
+          book_id: currentBook?.id,
+          context: {
+            bookTitle: currentBook?.title,
+            genre: currentBook?.genre,
+            tone: currentBook?.tone,
+            storyBible,
+            content,
+            chapterTitle: chapter?.title,
+            chapterNumber: chapter?.chapter_number,
+          },
+        }),
+      });
+      const data = await res.json();
+      if (!data.success) throw new Error(data.error);
+
       if (action === 'continue') {
-        newContent += '\n\nThe story continued with unexpected twists and turns, each page revealing new depths to the characters and their motivations. The world around them seemed to shift and change, responding to their actions in ways they could never have anticipated.';
-      } else if (action === 'expand') {
-        newContent = content.replace(/\.$/, '. The atmosphere grew thick with tension as every moment seemed to stretch into eternity. Details previously overlooked now emerged with startling clarity, painting a picture far more complex than initially perceived.');
-      } else if (action === 'rewrite') {
-        newContent = content.split('.').map(s => s.trim()).filter(Boolean).join('. ') + '.';
+        setContent(content + '\n\n' + data.generated_text);
+      } else {
+        setContent(data.generated_text);
       }
-      setContent(newContent);
+    } catch (err) {
+      console.error('AI action failed:', err);
+    } finally {
       setIsAiGenerating(false);
-    }, 1500);
+    }
   };
 
-  const insertAiText = () => {
+  const insertAiText = async () => {
     if (!aiPrompt.trim()) return;
     setIsAiGenerating(true);
     incrementUsage();
-    
-    setTimeout(() => {
-      const generatedText = `\n\n[AI Generated based on: "${aiPrompt}"]\n\nThe narrative flowed naturally, weaving together the requested elements with the existing story threads. Characters responded authentically to their circumstances, their voices clear and distinct against the backdrop of the unfolding plot.`;
-      setContent(content + generatedText);
+    try {
+      const res = await fetch('/api/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'default',
+          prompt: aiPrompt,
+          book_id: currentBook?.id,
+          context: {
+            bookTitle: currentBook?.title,
+            genre: currentBook?.genre,
+            tone: currentBook?.tone,
+            storyBible,
+            content,
+          },
+        }),
+      });
+      const data = await res.json();
+      if (!data.success) throw new Error(data.error);
+
+      setContent(content + '\n\n' + data.generated_text);
       setAiPrompt('');
+    } catch (err) {
+      console.error('AI prompt failed:', err);
+    } finally {
       setIsAiGenerating(false);
-    }, 1500);
+    }
   };
+
 
   if (!chapter) {
     return (

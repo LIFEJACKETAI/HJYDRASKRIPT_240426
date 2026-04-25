@@ -87,21 +87,68 @@ export function BookDetail() {
     }
   };
 
-  const handleGenerateOutline = async () => {
+    const handleGenerateOutline = async () => {
+    if (!book) return;
     setShowGenerateModal(true);
-    // Simulate AI outline generation
-    setTimeout(() => {
-      const outline = [
-        { title: 'Chapter 1: The Beginning', number: 1 },
-        { title: 'Chapter 2: Rising Tension', number: 2 },
-        { title: 'Chapter 3: The Discovery', number: 3 },
-        { title: 'Chapter 4: First Conflict', number: 4 },
-        { title: 'Chapter 5: The Twist', number: 5 },
-      ];
-      // Would create chapters from outline
+    try {
+      const res = await fetch('/api/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'outline',
+          book_id: book.id,
+          context: {
+            bookTitle: book.title,
+            genre: book.genre,
+            tone: book.tone,
+            description: book.description,
+            storyBible,
+          },
+        }),
+      });
+
+      const data = await res.json();
+      if (!data.success) throw new Error(data.error || 'Generation failed');
+
+      // Parse "Chapter N: Title\nSummary" format
+      const lines = data.generated_text.split('\n').filter((l: string) => l.trim());
+      const chapterDefs: { title: string; summary: string; number: number }[] = [];
+      let current: { title: string; summary: string; number: number } | null = null;
+
+      for (const line of lines) {
+        const match = line.match(/^Chapter\s+(\d+)[:\-]\s*(.+)/i);
+        if (match) {
+          if (current) chapterDefs.push(current);
+          current = { number: parseInt(match[1]), title: match[2].trim(), summary: '' };
+        } else if (current && line.trim()) {
+          current.summary = line.trim();
+        }
+      }
+      if (current) chapterDefs.push(current);
+
+      // Create chapters in DB
+      for (const def of chapterDefs) {
+        const chapterRes = await fetch('/api/chapters', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            book_id: book.id,
+            title: def.title,
+            chapter_number: def.number,
+            content: '',
+            summary: def.summary,
+          }),
+        });
+        const newChapter = await chapterRes.json();
+        setChapters((prev) => [...prev, newChapter]);
+      }
+    } catch (err) {
+      console.error('Outline generation failed:', err);
+    } finally {
       setShowGenerateModal(false);
-    }, 2000);
+    }
   };
+
 
   if (isLoading) {
     return (
